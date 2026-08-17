@@ -47,7 +47,13 @@ resource "aws_iam_role_policies_exclusive" "miamtf" {
   role_name = aws_iam_role.miamtf[each.key].name
 
   # required
-  policy_names = keys(each.value.inline_policies)
+  # Derived from the aws_iam_role_policy resources (not from locals) so that
+  # the exclusive list is reconciled only after every listed policy exists;
+  # otherwise adding a new inline policy races with this resource and the
+  # apply fails (PutRolePolicy is issued for the not-yet-created policy).
+  policy_names = [
+    for p in values(aws_iam_role_policy.miamtf) : p.name if p.role == each.key
+  ]
 }
 
 resource "aws_iam_role_policy_attachment" "miamtf" {
@@ -76,7 +82,11 @@ resource "aws_iam_role_policy_attachments_exclusive" "miamtf" {
   role_name = aws_iam_role.miamtf[each.key].name
 
   # required
-  policy_arns = each.value.managed_policy_arns
+  # Same as aws_iam_role_policies_exclusive: derived from the attachment
+  # resources so reconciliation happens only after all attachments exist.
+  policy_arns = [
+    for p in values(aws_iam_role_policy_attachment.miamtf) : p.policy_arn if p.role == each.key
+  ]
 }
 
 resource "aws_iam_policy" "miamtf" {

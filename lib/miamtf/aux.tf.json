@@ -42,7 +42,7 @@
             "miamtf": [
                 {
                     "for_each": "${local.miamtf.roles}",
-                    "policy_names": "${keys(each.value.inline_policies)}",
+                    "policy_names": "${[\n    for p in values(aws_iam_role_policy.miamtf) : p.name if p.role == each.key\n  ]}",
                     "role_name": "${aws_iam_role.miamtf[each.key].name}"
                 }
             ]
@@ -50,7 +50,7 @@
         "aws_iam_role_policy": {
             "miamtf": [
                 {
-                    "for_each": "${{\n    for v in flatten([\n      for role_name, role in local.miamtf.roles : [\n        for policy_name, policy_document in role.inline_policies : {\n          role_name       = role_name\n          policy_name     = policy_name\n          policy_document = policy_document\n        }\n      ]\n    ]) : \"${v.role_name}|${v.policy_name}\" =\u003e v\n  }}",
+                    "for_each": "${{\n    for v in flatten([\n      for role_name, role in local.miamtf.roles : [\n        for policy_name, policy_document in role.inline_policies : {\n          role_name       = role_name\n          policy_name     = policy_name\n          policy_document = policy_document\n        }\n      ]\n    ]) : \"${v.role_name}|${v.policy_name}\" => v\n  }}",
                     "name": "${each.value.policy_name}",
                     "policy": "${jsonencode(each.value.policy_document)}",
                     "role": "${aws_iam_role.miamtf[each.value.role_name].name}"
@@ -60,7 +60,7 @@
         "aws_iam_role_policy_attachment": {
             "miamtf": [
                 {
-                    "for_each": "${{\n    for v in flatten([\n      for role_name, role in local.miamtf.roles : [\n        for policy_arn in role.managed_policy_arns : {\n          role_name  = role_name\n          policy_arn = policy_arn\n        }\n      ]\n    ]) : \"${v.role_name}|${v.policy_arn}\" =\u003e v\n  }}",
+                    "for_each": "${{\n    for v in flatten([\n      for role_name, role in local.miamtf.roles : [\n        for policy_arn in role.managed_policy_arns : {\n          role_name  = role_name\n          policy_arn = policy_arn\n        }\n      ]\n    ]) : \"${v.role_name}|${v.policy_arn}\" => v\n  }}",
                     "policy_arn": "${each.value.policy_arn}",
                     "role": "${aws_iam_role.miamtf[each.value.role_name].name}"
                 }
@@ -70,7 +70,7 @@
             "miamtf": [
                 {
                     "for_each": "${local.miamtf.roles}",
-                    "policy_arns": "${each.value.managed_policy_arns}",
+                    "policy_arns": "${[\n    for p in values(aws_iam_role_policy_attachment.miamtf) : p.policy_arn if p.role == each.key\n  ]}",
                     "role_name": "${aws_iam_role.miamtf[each.key].name}"
                 }
             ]
